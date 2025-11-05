@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShelfHelp - Your Grocery List Assistant</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <h1 class="logo">🛒 ShelfHelp</h1>
+                <nav class="nav">
+                    <div id="authSection">
+                        <button id="showLoginBtn" class="btn btn-outline">Sign In</button>
+                        <button id="showRegisterBtn" class="btn btn-primary">Register</button>
+                    </div>
+                    <div id="userSection" style="display: none;">
+                        <span id="userEmail" class="user-email"></span>
+                        <button id="logoutBtn" class="btn btn-outline">Logout</button>
+                    </div>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Auth Modals -->
+        <div id="loginModal" class="modal">
+            <div class="modal-content">
+                <span class="close" data-modal="loginModal">&times;</span>
+                <h2>Sign In</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                    <div id="loginError" class="error"></div>
+                </form>
+            </div>
+        </div>
+
+        <div id="registerModal" class="modal">
+            <div class="modal-content">
+                <span class="close" data-modal="registerModal">&times;</span>
+                <h2>Register</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Register</button>
+                    <div id="registerError" class="error"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="container">
+            <!-- Browse Section -->
+            <section class="browse-section">
+                <div class="browse-container">
+                    <!-- Recommended Recipes -->
+                    <div class="browse-panel">
+                        <h2>🍳 Recommended Recipes</h2>
+                        <div id="recommendedRecipes" class="items-grid"></div>
+                    </div>
+
+                    <!-- Recommended Items -->
+                    <div class="browse-panel">
+                        <h2>🥗 Recommended Items</h2>
+                        <div id="recommendedItems" class="items-grid"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User's Saved Items (shown when logged in) -->
+            <section id="userItemsSection" class="user-section" style="display: none;">
+                <div class="section-header">
+                    <h2>📝 My Recipes</h2>
+                    <button id="showAddRecipeBtn" class="btn btn-primary">+ Add Recipe</button>
+                </div>
+                <div id="userRecipes" class="items-grid"></div>
+
+                <div class="section-header">
+                    <h2>🛍️ My Items</h2>
+                    <button id="showAddItemBtn" class="btn btn-primary">+ Add Item</button>
+                </div>
+                <div id="userItems" class="items-grid"></div>
+            </section>
+
+            <!-- Shopping Cart -->
+            <section class="cart-section">
+                <div class="cart-header">
+                    <h2>🛒 Shopping Cart</h2>
+                    <button id="checkoutBtn" class="btn btn-success" style="display: none;">Checkout & Email List</button>
+                </div>
+                <div id="cartItems" class="cart-items"></div>
+                <div id="cartEmpty" class="cart-empty">Your cart is empty. Add some recipes or items!</div>
+            </section>
+        </main>
+
+        <!-- Add Recipe Modal -->
+        <div id="addRecipeModal" class="modal">
+            <div class="modal-content">
+                <span class="close" data-modal="addRecipeModal">&times;</span>
+                <h2>Add Recipe</h2>
+                <form id="addRecipeForm">
+                    <div class="form-group">
+                        <label for="recipeName">Recipe Name</label>
+                        <input type="text" id="recipeName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeIngredients">Ingredients (comma-separated)</label>
+                        <textarea id="recipeIngredients" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeInstructions">Instructions (optional)</label>
+                        <textarea id="recipeInstructions" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Add Recipe</button>
+                    <div id="addRecipeError" class="error"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Item Modal -->
+        <div id="addItemModal" class="modal">
+            <div class="modal-content">
+                <span class="close" data-modal="addItemModal">&times;</span>
+                <h2>Add Item</h2>
+                <form id="addItemForm">
+                    <div class="form-group">
+                        <label for="itemName">Item Name</label>
+                        <input type="text" id="itemName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemCategory">Category (optional)</label>
+                        <input type="text" id="itemCategory">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Add Item</button>
+                    <div id="addItemError" class="error"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Checkout Success Modal -->
+        <div id="checkoutModal" class="modal">
+            <div class="modal-content">
+                <span class="close" data-modal="checkoutModal">&times;</span>
+                <h2>✅ Checkout Complete!</h2>
+                <div id="checkoutMessage"></div>
+                <div id="shoppingListPreview" class="shopping-list-preview"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
