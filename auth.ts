@@ -45,20 +45,23 @@ const config = {
     signIn: "/",
   },
   callbacks: {
-    async jwt({ token, user }: { token: any; user: any }) {
+    async jwt({ token, user }: { token: Record<string, unknown>; user: Record<string, unknown> | undefined }) {
       if (user) {
         token.id = user.id;
       }
       return token;
     },
-    async session({ session, token }: { session: any; token: any }) {
-      if (session.user) {
-        session.user.id = token.id as string;
+    async session({ session, token }: { session: Record<string, unknown>; token: Record<string, unknown> }) {
+      const sess = session as { user?: { id?: string } };
+      const tok = token as { id?: string };
+      if (sess.user && tok.id) {
+        sess.user.id = tok.id;
       }
       return session;
     },
   },
 };
 
-// @ts-ignore - NextAuth v5 beta has some TypeScript issues with Next.js 16 build
+// @ts-expect-error - NextAuth v5 beta has TypeScript compatibility issues with Next.js 16 during build
+// See: https://github.com/nextauthjs/next-auth/issues
 export const { handlers, signIn, signOut, auth } = NextAuth(config);

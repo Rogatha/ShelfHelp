@@ -87,7 +87,7 @@ Thank you for using ShelfHelp!
         },
       });
     } catch {
-      // If test account fails, just log and continue
+      // If test account creation fails, fall back to logging
       console.log('Email would be sent to:', session.user.email);
       console.log('Content:', emailContent);
       
