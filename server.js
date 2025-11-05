@@ -6,11 +6,24 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const db = require('./server/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+// Rate limiting
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per window for auth
+  message: 'Too many authentication attempts, please try again later'
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // 100 requests per window for API
+});
 
 // Middleware
 app.use(cors());
@@ -47,7 +60,7 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Auth endpoints
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -77,7 +90,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', authLimiter, (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -100,7 +113,7 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // Recipe endpoints
-app.get('/api/recipes/recommended', (req, res) => {
+app.get('/api/recipes/recommended', apiLimiter, (req, res) => {
   db.all('SELECT * FROM recipes WHERE is_recommended = 1 ORDER BY created_at DESC LIMIT 10', [], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to fetch recipes' });
@@ -109,7 +122,7 @@ app.get('/api/recipes/recommended', (req, res) => {
   });
 });
 
-app.get('/api/recipes', authenticateToken, (req, res) => {
+app.get('/api/recipes', apiLimiter, authenticateToken, (req, res) => {
   db.all(
     'SELECT * FROM recipes WHERE user_id = ? ORDER BY created_at DESC',
     [req.user.id],
@@ -122,7 +135,7 @@ app.get('/api/recipes', authenticateToken, (req, res) => {
   );
 });
 
-app.post('/api/recipes', authenticateToken, (req, res) => {
+app.post('/api/recipes', apiLimiter, authenticateToken, (req, res) => {
   const { name, ingredients, instructions } = req.body;
 
   if (!name || !ingredients) {
@@ -141,7 +154,7 @@ app.post('/api/recipes', authenticateToken, (req, res) => {
   );
 });
 
-app.delete('/api/recipes/:id', authenticateToken, (req, res) => {
+app.delete('/api/recipes/:id', apiLimiter, authenticateToken, (req, res) => {
   db.run(
     'DELETE FROM recipes WHERE id = ? AND user_id = ?',
     [req.params.id, req.user.id],
@@ -155,7 +168,7 @@ app.delete('/api/recipes/:id', authenticateToken, (req, res) => {
 });
 
 // Item endpoints
-app.get('/api/items/recommended', (req, res) => {
+app.get('/api/items/recommended', apiLimiter, (req, res) => {
   db.all('SELECT * FROM items WHERE is_recommended = 1 ORDER BY name', [], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to fetch items' });
@@ -164,7 +177,7 @@ app.get('/api/items/recommended', (req, res) => {
   });
 });
 
-app.get('/api/items', authenticateToken, (req, res) => {
+app.get('/api/items', apiLimiter, authenticateToken, (req, res) => {
   db.all(
     'SELECT * FROM items WHERE user_id = ? ORDER BY name',
     [req.user.id],
@@ -177,7 +190,7 @@ app.get('/api/items', authenticateToken, (req, res) => {
   );
 });
 
-app.post('/api/items', authenticateToken, (req, res) => {
+app.post('/api/items', apiLimiter, authenticateToken, (req, res) => {
   const { name, category } = req.body;
 
   if (!name) {
@@ -196,7 +209,7 @@ app.post('/api/items', authenticateToken, (req, res) => {
   );
 });
 
-app.delete('/api/items/:id', authenticateToken, (req, res) => {
+app.delete('/api/items/:id', apiLimiter, authenticateToken, (req, res) => {
   db.run(
     'DELETE FROM items WHERE id = ? AND user_id = ?',
     [req.params.id, req.user.id],
@@ -210,7 +223,7 @@ app.delete('/api/items/:id', authenticateToken, (req, res) => {
 });
 
 // Cart endpoints
-app.get('/api/cart', authenticateToken, (req, res) => {
+app.get('/api/cart', apiLimiter, authenticateToken, (req, res) => {
   db.all(
     `SELECT c.*, r.name as recipe_name, r.ingredients, i.name as item_name, i.category
      FROM cart c
@@ -228,7 +241,7 @@ app.get('/api/cart', authenticateToken, (req, res) => {
   );
 });
 
-app.post('/api/cart/recipe', authenticateToken, (req, res) => {
+app.post('/api/cart/recipe', apiLimiter, authenticateToken, (req, res) => {
   const { recipeId } = req.body;
 
   if (!recipeId) {
@@ -247,7 +260,7 @@ app.post('/api/cart/recipe', authenticateToken, (req, res) => {
   );
 });
 
-app.post('/api/cart/item', authenticateToken, (req, res) => {
+app.post('/api/cart/item', apiLimiter, authenticateToken, (req, res) => {
   const { itemId, quantity } = req.body;
 
   if (!itemId) {
@@ -266,7 +279,7 @@ app.post('/api/cart/item', authenticateToken, (req, res) => {
   );
 });
 
-app.delete('/api/cart/:id', authenticateToken, (req, res) => {
+app.delete('/api/cart/:id', apiLimiter, authenticateToken, (req, res) => {
   db.run(
     'DELETE FROM cart WHERE id = ? AND user_id = ?',
     [req.params.id, req.user.id],
@@ -279,7 +292,7 @@ app.delete('/api/cart/:id', authenticateToken, (req, res) => {
   );
 });
 
-app.post('/api/cart/checkout', authenticateToken, (req, res) => {
+app.post('/api/cart/checkout', apiLimiter, authenticateToken, (req, res) => {
   // Get cart items with details
   db.all(
     `SELECT c.*, r.name as recipe_name, r.ingredients, i.name as item_name, i.category
