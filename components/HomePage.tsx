@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import AuthModal from '@/components/AuthModal';
 
@@ -31,7 +31,7 @@ interface CartItem {
 }
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -40,33 +40,36 @@ export default function HomePage() {
   const [showNewItem, setShowNewItem] = useState(false);
   const [checkoutMessage, setCheckoutMessage] = useState('');
 
-  useEffect(() => {
-    loadRecipes();
-    loadItems();
-    if (session) {
-      loadCart();
-    }
-  }, [session]);
-
-  const loadRecipes = async () => {
+  const loadRecipes = useCallback(async () => {
     const res = await fetch('/api/recipes');
     const data = await res.json();
     setRecipes(data);
-  };
+  }, []);
 
-  const loadItems = async () => {
+  const loadItems = useCallback(async () => {
     const res = await fetch('/api/items');
     const data = await res.json();
     setItems(data);
-  };
+  }, []);
 
-  const loadCart = async () => {
+  const loadCart = useCallback(async () => {
     const res = await fetch('/api/cart');
     if (res.ok) {
       const data = await res.json();
       setCart(data);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await loadRecipes();
+      await loadItems();
+      if (session) {
+        await loadCart();
+      }
+    };
+    void fetchData();
+  }, [session, loadRecipes, loadItems, loadCart]);
 
   const addToCart = async (type: 'item' | 'recipe', id: number) => {
     if (!session) {
@@ -179,7 +182,7 @@ export default function HomePage() {
               <p className="text-sm text-gray-600">Smart grocery lists made easy</p>
             </div>
             <div>
-              {session ? (
+              {session?.user ? (
                 <div className="flex items-center gap-4">
                   <span className="text-gray-700">Hello, {session.user.name || session.user.email}!</span>
                   <button

@@ -26,7 +26,14 @@ export async function POST() {
       LEFT JOIN items i ON ci.item_id = i.id
       LEFT JOIN recipes r ON ci.recipe_id = r.id
       WHERE ci.user_id = ?
-    `).all(userId) as any[];
+    `).all(userId) as Array<{
+      type: string;
+      quantity: number;
+      item_name: string | null;
+      category: string | null;
+      recipe_name: string | null;
+      ingredients: string | null;
+    }>;
 
     if (cartItems.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
@@ -37,11 +44,11 @@ export async function POST() {
     const recipesList: string[] = [];
 
     for (const item of cartItems) {
-      if (item.type === 'item') {
+      if (item.type === 'item' && item.item_name && item.category) {
         ingredientsList.push(`${item.item_name} (${item.category}) x${item.quantity}`);
-      } else if (item.type === 'recipe') {
+      } else if (item.type === 'recipe' && item.recipe_name && item.ingredients) {
         recipesList.push(`\n${item.recipe_name}:`);
-        const ingredients = JSON.parse(item.ingredients);
+        const ingredients = JSON.parse(item.ingredients) as string[];
         ingredients.forEach((ing: string) => {
           ingredientsList.push(`  - ${ing}`);
         });
@@ -79,7 +86,7 @@ Thank you for using ShelfHelp!
           pass: testAccount.pass,
         },
       });
-    } catch (error) {
+    } catch {
       // If test account fails, just log and continue
       console.log('Email would be sent to:', session.user.email);
       console.log('Content:', emailContent);

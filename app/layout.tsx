@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "@/lib/init"; // Initialize database
 
 export const metadata: Metadata = {
   title: "ShelfHelp - Smart Grocery Lists",

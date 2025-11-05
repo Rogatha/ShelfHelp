@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 
 interface AuthModalProps {
@@ -64,7 +64,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           onSuccess();
         }
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);

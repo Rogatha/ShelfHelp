@@ -66,7 +66,8 @@ export async function POST(request: Request) {
     if (existing) {
       // Update quantity
       const stmt = db.prepare('UPDATE cart_items SET quantity = quantity + ? WHERE id = ?');
-      stmt.run(quantity, (existing as any).id);
+      const existingCart = existing as { id: number };
+      stmt.run(quantity, existingCart.id);
     } else {
       // Insert new cart item
       const stmt = db.prepare(

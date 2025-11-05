@@ -1,12 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import db, { initDB } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
-// Initialize database on startup
-initDB();
-
-export const { handlers, signIn, signOut, auth } = NextAuth({
+const config = {
   providers: [
     Credentials({
       credentials: {
@@ -18,8 +14,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
+        // Import db lazily to avoid build-time execution
+        const { default: db } = await import("@/lib/db");
+        
         const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
-        const user = stmt.get(credentials.email) as any;
+        const user = stmt.get(credentials.email) as { id: number; email: string; password: string; name: string | null } | undefined;
 
         if (!user) {
           return null;
@@ -46,17 +45,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: any; user: any }) {
       if (user) {
         token.id = user.id;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       if (session.user) {
         session.user.id = token.id as string;
       }
       return session;
     },
   },
-});
+};
+
+// @ts-ignore - NextAuth v5 beta has some TypeScript issues with Next.js 16 build
+export const { handlers, signIn, signOut, auth } = NextAuth(config);
